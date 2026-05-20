@@ -1,0 +1,16 @@
+# ==================== 基础配置 ====================
+spring:
+  application:
+    name: life-service
+  profiles:
+    active: dev
+
+# ==================== 服务端口 ====================
+server:
+  port: 8080
+
+# ==================== 日志配置 ====================
+logging:
+  level:
+    com.std.lifeService: DEBUG
+    root: INFO

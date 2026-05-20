@@ -1,0 +1,15 @@
+package com.std.lifeService.service;
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.std.lifeService.entity.Bill;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+public interface BillService {
+    Bill create(Long userId, Bill bill);
+    Bill update(Long billId, Bill updatedBill, Long userId);
+    void delete(Long billId, Long userId);
+    Page<Bill> page(Long userId, Long categoryId, String type,
+                    LocalDateTime startDate, LocalDateTime endDate,
+                    int page, int size);
+}
