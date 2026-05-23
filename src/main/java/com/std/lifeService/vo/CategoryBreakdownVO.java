@@ -1,4 +1,4 @@
-package com.std.lifeService.dto;
+package com.std.lifeService.vo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

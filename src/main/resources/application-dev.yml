@@ -5,11 +5,15 @@ spring:
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/aimarket?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: aimarket
-    password: Wjw@6899
+    password: ENC(3+VRZx3guZ108R2vRhFWvvGH6Mvup3XRZt/DVwwaPPxTcXnoT/9LWfUa/EkzrKIu)
     driver-class-name: com.mysql.cj.jdbc.Driver
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
+
+jasypt:
+  encryptor:
+    password: ${JASYPT_ENCRYPTOR_PASSWORD:life-service-secret}
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
