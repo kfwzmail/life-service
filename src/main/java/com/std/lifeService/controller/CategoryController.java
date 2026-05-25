@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Tag(name = "分类管理")
 @RestController
@@ -22,25 +23,22 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @Operation(summary = "获取分类列表（预设 + 自定义）")
-    @GetMapping
+    @PostMapping("/list")
     public Result<List<Category>> list() {
-        Long userId = LoginUserContext.getUserId();
-        return Result.success(categoryService.listByUser(userId));
+        return Result.success(categoryService.listByUser(LoginUserContext.getUserId()));
     }
 
     @Operation(summary = "新增自定义分类")
-    @PostMapping
+    @PostMapping("/create")
     public Result<Category> add(@Valid @RequestBody CategoryRequest req) {
-        Long userId = LoginUserContext.getUserId();
-        Category category = categoryService.addCustom(userId, req.getName(), req.getType(), req.getIcon());
-        return Result.success(category);
+        return Result.success(categoryService.addCustom(LoginUserContext.getUserId(), req.getName(), req.getType(), req.getIcon()));
     }
 
     @Operation(summary = "删除自定义分类")
-    @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) {
-        Long userId = LoginUserContext.getUserId();
-        categoryService.deleteCustom(id, userId);
+    @PostMapping("/delete")
+    public Result<Void> delete(@RequestBody Map<String, Object> params) {
+        Long id = Long.valueOf(params.get("id").toString());
+        categoryService.deleteCustom(id, LoginUserContext.getUserId());
         return Result.success();
     }
 }

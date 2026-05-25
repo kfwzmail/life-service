@@ -38,4 +38,29 @@ public interface BillMapper extends BaseMapper<Bill> {
                                              @Param("type") String type,
                                              @Param("start") LocalDateTime start,
                                              @Param("end") LocalDateTime end);
+
+    @Select("""
+        SELECT DATE(bill_time) AS date, type, COALESCE(SUM(amount), 0) AS total
+        FROM bill
+        WHERE user_id = #{userId}
+          AND bill_time >= #{start} AND bill_time < #{end}
+        GROUP BY DATE(bill_time), type
+        ORDER BY date
+    """)
+    List<Map<String, Object>> sumByDay(@Param("userId") Long userId,
+                                        @Param("start") LocalDateTime start,
+                                        @Param("end") LocalDateTime end);
+
+    @Select("""
+        SELECT DATE_FORMAT(bill_time, '%Y-%m') AS month, type,
+               COALESCE(SUM(amount), 0) AS total
+        FROM bill
+        WHERE user_id = #{userId}
+          AND bill_time >= #{start} AND bill_time < #{end}
+        GROUP BY DATE_FORMAT(bill_time, '%Y-%m'), type
+        ORDER BY month
+    """)
+    List<Map<String, Object>> sumByMonth(@Param("userId") Long userId,
+                                          @Param("start") LocalDateTime start,
+                                          @Param("end") LocalDateTime end);
 }
