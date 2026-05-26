@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,10 +29,12 @@ public class StatsServiceImpl implements StatsService {
 
     private final BillMapper billMapper;
 
+    private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     @Override
     public TodayStatsVO today(Long userId) {
-        LocalDateTime start = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
-        LocalDateTime end = LocalDateTime.of(LocalDate.now().plusDays(1), LocalTime.MIN);
+        String start = LocalDate.now().atStartOfDay().format(DTF);
+        String end = LocalDate.now().plusDays(1).atStartOfDay().format(DTF);
 
         List<Map<String, Object>> sums = billMapper.sumByType(userId, start, end);
         BigDecimal expense = BigDecimal.ZERO;
@@ -51,8 +54,8 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public MonthStatsVO month(Long userId, String yearMonth) {
         YearMonth ym = (yearMonth != null) ? YearMonth.parse(yearMonth) : YearMonth.now();
-        LocalDateTime start = ym.atDay(1).atStartOfDay();
-        LocalDateTime end = ym.plusMonths(1).atDay(1).atStartOfDay();
+        String start = ym.atDay(1).atStartOfDay().format(DTF);
+        String end = ym.plusMonths(1).atDay(1).atStartOfDay().format(DTF);
 
         List<Map<String, Object>> sums = billMapper.sumByType(userId, start, end);
         BigDecimal expense = BigDecimal.ZERO;
@@ -80,8 +83,8 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public List<DailyTrendVO> dailyTrend(Long userId, String yearMonth) {
         YearMonth ym = YearMonth.parse(yearMonth);
-        LocalDateTime start = ym.atDay(1).atStartOfDay();
-        LocalDateTime end = ym.plusMonths(1).atDay(1).atStartOfDay();
+        String start = ym.atDay(1).atStartOfDay().format(DTF);
+        String end = ym.plusMonths(1).atDay(1).atStartOfDay().format(DTF);
 
         List<Map<String, Object>> rows = billMapper.sumByDay(userId, start, end);
 
@@ -107,8 +110,8 @@ public class StatsServiceImpl implements StatsService {
 
     @Override
     public List<YearStatsVO> yearly(Long userId, int year) {
-        LocalDateTime start = LocalDateTime.of(year, 1, 1, 0, 0);
-        LocalDateTime end = LocalDateTime.of(year + 1, 1, 1, 0, 0);
+        String start = year + "-01-01 00:00:00";
+        String end = (year + 1) + "-01-01 00:00:00";
 
         List<Map<String, Object>> rows = billMapper.sumByMonth(userId, start, end);
 

@@ -6,8 +6,6 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -17,12 +15,14 @@ public interface BillMapper extends BaseMapper<Bill> {
     @Select("""
         SELECT type, COALESCE(SUM(amount), 0) AS total
         FROM bill
-        WHERE user_id = #{userId} AND bill_time >= #{start} AND bill_time < #{end}
+        WHERE user_id = #{userId}
+          AND bill_time >= STR_TO_DATE(#{start}, '%Y-%m-%d %H:%i:%s')
+          AND bill_time < STR_TO_DATE(#{end}, '%Y-%m-%d %H:%i:%s')
         GROUP BY type
     """)
     List<Map<String, Object>> sumByType(@Param("userId") Long userId,
-                                         @Param("start") LocalDateTime start,
-                                         @Param("end") LocalDateTime end);
+                                         @Param("start") String start,
+                                         @Param("end") String end);
 
     @Select("""
         SELECT c.id AS categoryId, c.name AS categoryName, c.icon,
@@ -30,37 +30,40 @@ public interface BillMapper extends BaseMapper<Bill> {
         FROM bill b
         JOIN category c ON b.category_id = c.id
         WHERE b.user_id = #{userId} AND b.type = #{type}
-          AND b.bill_time >= #{start} AND b.bill_time < #{end}
+          AND b.bill_time >= STR_TO_DATE(#{start}, '%Y-%m-%d %H:%i:%s')
+          AND b.bill_time < STR_TO_DATE(#{end}, '%Y-%m-%d %H:%i:%s')
         GROUP BY c.id, c.name, c.icon
         ORDER BY amount DESC
     """)
     List<Map<String, Object>> sumByCategory(@Param("userId") Long userId,
                                              @Param("type") String type,
-                                             @Param("start") LocalDateTime start,
-                                             @Param("end") LocalDateTime end);
+                                             @Param("start") String start,
+                                             @Param("end") String end);
 
     @Select("""
         SELECT DATE(bill_time) AS date, type, COALESCE(SUM(amount), 0) AS total
         FROM bill
         WHERE user_id = #{userId}
-          AND bill_time >= #{start} AND bill_time < #{end}
+          AND bill_time >= STR_TO_DATE(#{start}, '%Y-%m-%d %H:%i:%s')
+          AND bill_time < STR_TO_DATE(#{end}, '%Y-%m-%d %H:%i:%s')
         GROUP BY DATE(bill_time), type
         ORDER BY date
     """)
     List<Map<String, Object>> sumByDay(@Param("userId") Long userId,
-                                        @Param("start") LocalDateTime start,
-                                        @Param("end") LocalDateTime end);
+                                        @Param("start") String start,
+                                        @Param("end") String end);
 
     @Select("""
         SELECT DATE_FORMAT(bill_time, '%Y-%m') AS month, type,
                COALESCE(SUM(amount), 0) AS total
         FROM bill
         WHERE user_id = #{userId}
-          AND bill_time >= #{start} AND bill_time < #{end}
+          AND bill_time >= STR_TO_DATE(#{start}, '%Y-%m-%d %H:%i:%s')
+          AND bill_time < STR_TO_DATE(#{end}, '%Y-%m-%d %H:%i:%s')
         GROUP BY DATE_FORMAT(bill_time, '%Y-%m'), type
         ORDER BY month
     """)
     List<Map<String, Object>> sumByMonth(@Param("userId") Long userId,
-                                          @Param("start") LocalDateTime start,
-                                          @Param("end") LocalDateTime end);
+                                          @Param("start") String start,
+                                          @Param("end") String end);
 }

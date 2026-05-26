@@ -16,9 +16,10 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -91,11 +92,13 @@ public class BudgetServiceImpl implements BudgetService {
         }
     }
 
+    private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     @Override
     public List<BudgetVO> comparison(Long userId, String budgetMonth) {
         YearMonth ym = YearMonth.parse(budgetMonth);
-        LocalDateTime start = ym.atDay(1).atStartOfDay();
-        LocalDateTime end = ym.plusMonths(1).atDay(1).atStartOfDay();
+        String start = ym.atDay(1).atStartOfDay().format(DTF);
+        String end = ym.plusMonths(1).atDay(1).atStartOfDay().format(DTF);
 
         List<Budget> budgets = budgetMapper.selectList(
                 new LambdaQueryWrapper<Budget>()
