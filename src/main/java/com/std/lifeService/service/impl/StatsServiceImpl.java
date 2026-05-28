@@ -82,7 +82,7 @@ public class StatsServiceImpl implements StatsService {
 
     @Override
     public List<DailyTrendVO> dailyTrend(Long userId, String yearMonth) {
-        YearMonth ym = YearMonth.parse(yearMonth);
+        YearMonth ym = (yearMonth != null) ? YearMonth.parse(yearMonth) : YearMonth.now();
         String start = ym.atDay(1).atStartOfDay().format(DTF);
         String end = ym.plusMonths(1).atDay(1).atStartOfDay().format(DTF);
 
@@ -91,7 +91,7 @@ public class StatsServiceImpl implements StatsService {
         int days = ym.lengthOfMonth();
         List<DailyTrendVO> result = new ArrayList<>(days);
         for (int d = 1; d <= days; d++) {
-            String date = yearMonth + "-" + String.format("%02d", d);
+            String date = ym + "-" + String.format("%02d", d);
             BigDecimal expense = BigDecimal.ZERO;
             BigDecimal income = BigDecimal.ZERO;
             for (Map<String, Object> row : rows) {

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Year;
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +48,8 @@ public class StatsController {
     @Operation(summary = "年度统计")
     @PostMapping("/yearly")
     public Result<List<YearStatsVO>> yearly(@RequestBody Map<String, Object> params) {
-        int year = Integer.parseInt(params.get("year").toString());
+        Object yearObj = params.get("year");
+        int year = (yearObj != null) ? Integer.parseInt(yearObj.toString()) : Year.now().getValue();
         return Result.success(statsService.yearly(LoginUserContext.getUserId(), year));
     }
 }
