@@ -22,6 +22,9 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * 账单服务实现
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -30,7 +33,9 @@ public class BillServiceImpl implements BillService {
     private final BillMapper billMapper;
     private final CategoryMapper categoryMapper;
 
+    /** 微信账单分类映射：原始分类名 -> 系统分类名 */
     private static final Map<String, String> WECHAT_CATEGORY_MAP = new LinkedHashMap<>();
+    /** 支付宝账单分类映射：原始分类名 -> 系统分类名 */
     private static final Map<String, String> ALIPAY_CATEGORY_MAP = new LinkedHashMap<>();
 
     static {
@@ -62,6 +67,7 @@ public class BillServiceImpl implements BillService {
         if (exist == null) {
             throw new BusinessException(ResultCode.NOT_FOUND);
         }
+        // 仅允许修改自己的账单
         if (!exist.getUserId().equals(userId)) {
             throw new BusinessException(403, "不能修改他人的账单");
         }
@@ -77,6 +83,7 @@ public class BillServiceImpl implements BillService {
         if (exist == null) {
             throw new BusinessException(ResultCode.NOT_FOUND);
         }
+        // 仅允许删除自己的账单
         if (!exist.getUserId().equals(userId)) {
             throw new BusinessException(403, "不能删除他人的账单");
         }
@@ -99,9 +106,11 @@ public class BillServiceImpl implements BillService {
 
     @Override
     public Map<String, Object> importBills(Long userId, String format, String content) {
+        // 根据导入格式选择对应的分类映射表
         Map<String, String> categoryMap = "ALIPAY".equalsIgnoreCase(format)
                 ? ALIPAY_CATEGORY_MAP : WECHAT_CATEGORY_MAP;
 
+        // 查询用户可见分类，构建 name -> id 映射
         List<Category> userCategories = categoryMapper.selectList(
                 new LambdaQueryWrapper<Category>()
                         .eq(Category::getIsDefault, 1)
@@ -116,6 +125,7 @@ public class BillServiceImpl implements BillService {
 
         int success = 0;
         int fail = 0;
+        // 跳过CSV首行标题，从第二行开始解析
         String[] lines = content.split("\n");
         for (int i = 1; i < lines.length; i++) {
             String line = lines[i].trim();
@@ -137,6 +147,17 @@ public class BillServiceImpl implements BillService {
         return Map.of("success", success, "fail", fail, "total", success + fail);
     }
 
+    /**
+     * 解析单行CSV为账单实体
+     *
+     * @param line              CSV行内容
+     * @param format            导入格式（WECHAT/ALIPAY）
+     * @param categoryMap       第三方分类 -> 系统分类映射
+     * @param catNameToId       系统分类名 -> 分类ID映射
+     * @param defaultCategoryId 兜底分类ID
+     * @param userId            用户ID
+     * @return 解析后的账单，解析失败返回null
+     */
     private Bill parseLine(String line, String format, Map<String, String> categoryMap,
                            Map<String, Long> catNameToId, Long defaultCategoryId, Long userId) {
         String[] cols = line.split(",");
@@ -146,6 +167,7 @@ public class BillServiceImpl implements BillService {
         String amountStr;
         String dateStr;
 
+        // 支付宝/微信CSV列序号不同，分别提取
         if ("ALIPAY".equalsIgnoreCase(format)) {
             if (cols.length < 11) return null;
             rawCategory = cols[4].trim();
@@ -159,9 +181,11 @@ public class BillServiceImpl implements BillService {
 
         if (amountStr.isEmpty()) return null;
 
+        // 去除金额中的货币符号
         amountStr = amountStr.replace("¥", "").replace("￥", "").replace("\"", "").strip();
         BigDecimal amount = new BigDecimal(amountStr).abs();
 
+        // 通过关键词匹配将第三方分类映射到系统分类
         String mappedName = null;
         for (Map.Entry<String, String> entry : categoryMap.entrySet()) {
             if (rawCategory.contains(entry.getKey())) {
@@ -172,6 +196,7 @@ public class BillServiceImpl implements BillService {
         if (mappedName == null) mappedName = "其他";
         Long categoryId = catNameToId.getOrDefault(mappedName, defaultCategoryId);
 
+        // 尝试解析日期，失败时使用当前时间兜底
         LocalDateTime billTime;
         try {
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm", Locale.CHINA);

@@ -10,6 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+/**
+ * 用户服务实现
+ */
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -19,6 +22,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User register(String phone, String password, String nickname) {
+        // 检查手机号是否已被注册
         User exist = userMapper.selectOne(
                 new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
         if (exist != null) {
@@ -29,6 +33,7 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(password));
         user.setNickname(nickname != null ? nickname : phone);
         userMapper.insert(user);
+        // 返回前清除密码，防止泄露
         user.setPassword(null);
         return user;
     }
@@ -37,12 +42,14 @@ public class UserServiceImpl implements UserService {
     public User login(String phone, String password) {
         User user = userMapper.selectOne(
                 new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
+        // 不区分"用户不存在"和"密码错误"，防止撞库
         if (user == null) {
             throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "手机号或密码错误");
         }
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "手机号或密码错误");
         }
+        // 返回前清除密码，防止泄露
         user.setPassword(null);
         return user;
     }
@@ -51,6 +58,7 @@ public class UserServiceImpl implements UserService {
     public User findById(Long id) {
         User user = userMapper.selectById(id);
         if (user != null) {
+            // 返回前清除密码，防止泄露
             user.setPassword(null);
         }
         return user;
